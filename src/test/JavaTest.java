@@ -6,6 +6,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.servlet.view.BeanNameViewResolver;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class JavaTest {
 
     @Test
@@ -32,7 +36,6 @@ public class JavaTest {
 
     @Test
     public void test2() throws Exception {
-
 
     }
 }

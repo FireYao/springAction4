@@ -1,5 +1,6 @@
 package com.fireyao.domain;
 
+import lombok.Data;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -9,6 +10,7 @@ import java.io.Serializable;
 @Entity
 @DynamicUpdate
 @DynamicInsert
+@Data
 public class Item implements Serializable {
     @Id
     @GeneratedValue
@@ -25,62 +27,4 @@ public class Item implements Serializable {
     private Integer itemStock;
 
 
-    public int getItemId() {
-        return itemId;
-    }
-
-    public void setItemId(int itemId) {
-        this.itemId = itemId;
-    }
-
-
-    public String getItemName() {
-        return itemName;
-    }
-
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
-    }
-
-
-    public Integer getItemPrice() {
-        return itemPrice;
-    }
-
-    public void setItemPrice(Integer itemPrice) {
-        this.itemPrice = itemPrice;
-    }
-
-
-    public Integer getItemStock() {
-        return itemStock;
-    }
-
-    public void setItemStock(Integer itemStock) {
-        this.itemStock = itemStock;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Item item = (Item) o;
-
-        if (itemId != item.itemId) return false;
-        if (itemName != null ? !itemName.equals(item.itemName) : item.itemName != null) return false;
-        if (itemPrice != null ? !itemPrice.equals(item.itemPrice) : item.itemPrice != null) return false;
-        if (itemStock != null ? !itemStock.equals(item.itemStock) : item.itemStock != null) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = itemId;
-        result = 31 * result + (itemName != null ? itemName.hashCode() : 0);
-        result = 31 * result + (itemPrice != null ? itemPrice.hashCode() : 0);
-        result = 31 * result + (itemStock != null ? itemStock.hashCode() : 0);
-        return result;
-    }
 }

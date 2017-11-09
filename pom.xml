@@ -29,6 +29,7 @@
         <druid.version>1.0.26</druid.version>
         <spring.data.jpa.version>1.10.4.RELEASE</spring.data.jpa.version>
         <commons-pool2.version>2.4.2</commons-pool2.version>
+        <lombok.version>1.16.18</lombok.version>
     </properties>
 
     <!-- 阿里云maven仓库 -->
@@ -58,6 +59,12 @@
 
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>javax.servlet</groupId>

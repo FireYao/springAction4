@@ -16,6 +16,7 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import javax.annotation.processing.SupportedAnnotationTypes;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -167,4 +168,6 @@ public class RootConfig {
 //                environment.getProperty("disc.artist"));
         return new ExpressiveBean(TITLE, ARTIST);
     }
+
+
 }

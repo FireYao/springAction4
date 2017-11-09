@@ -1,13 +1,14 @@
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fireyao.bean.BraveKnight;
 import com.fireyao.bean.ExpressiveBean;
 import com.fireyao.RootConfig;
-import com.fireyao.domain.Item;
+import com.fireyao.bean.list.AListSupplierTest;
 import com.fireyao.domain.UserTest;
 import com.fireyao.mq.RabbitProcesse;
 import com.fireyao.repository.ItemRepository;
-import org.geolatte.geom.M;
+import com.fireyao.repository.ItemRepositoryCustom;
+import com.fireyao.repository.dto.ItemDTO;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.amqp.core.Message;
@@ -16,11 +17,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * Created by lly on 2017/8/29
@@ -32,7 +28,6 @@ public class BeanTest {
     @Before
     public void setUp() throws Exception {
         context = new AnnotationConfigApplicationContext(RootConfig.class);
-//        context = new ClassPathXmlApplicationContext("classpath:knights.xml");
     }
 
     @Test
@@ -71,13 +66,28 @@ public class BeanTest {
     @Test
     public void test1() throws Exception {
 
-        ItemRepository itemRepository = context.getBean(ItemRepository.class);
+        ItemRepositoryCustom itemRepository = context.getBean(ItemRepositoryCustom.class);
+        Page<ItemDTO> itemDTO = itemRepository.findItemDTOs(null, null);
+        print(itemDTO);
+    }
 
-        int page=1,size=10;
-        Sort sort = new Sort(Sort.Direction.DESC, "itemId");
-        Pageable pageable = new PageRequest(page, size, sort);
+    @Test
+    public void test2() throws Exception {
+        AListSupplierTest aListSupplierTest = (AListSupplierTest) context.getBean("aListSupplierTest");
 
-        Page<Item> pageResult = itemRepository.findAll(pageable);
-        List<Item> itemList = pageResult.getContent();
+        aListSupplierTest.doSom();
+    }
+
+    @Test
+    public void test3() throws Exception {
+        ItemRepository bean = context.getBean(ItemRepository.class);
+        Page<ItemDTO> byId123 = bean.findItemDTOs(null, new PageRequest(0, 10));
+        print(byId123.getContent());
+    }
+
+    private void print(Object o) {
+        System.out.println(JSONObject.toJSONString(o,
+                SerializerFeature.PrettyFormat,
+                SerializerFeature.WriteNullStringAsEmpty));
     }
 }

@@ -1,18 +1,13 @@
 package com.fireyao.repository;
 
 import com.fireyao.domain.Item;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public interface ItemRepository extends JpaRepository<Item, Integer>, JpaSpecificationExecutor<Item> {
+public interface ItemRepository extends JpaRepository<Item, Integer>, JpaSpecificationExecutor<Item>,ItemRepositoryCustom {
     Item findByItemName(String itemName);
 
     List<Item> findByItemNameLike(String itemName);
@@ -21,5 +16,6 @@ public interface ItemRepository extends JpaRepository<Item, Integer>, JpaSpecifi
 
     List<Item> findByItemNameLikeOrderByItemNameDesc(String itemName);
 
-
+    @Query("select u from Item u where u.itemId = ?#{[0]}")
+    List<Item> findById123(int id);
 }
