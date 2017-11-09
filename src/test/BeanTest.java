@@ -7,7 +7,7 @@ import com.fireyao.bean.list.AListSupplierTest;
 import com.fireyao.domain.UserTest;
 import com.fireyao.mq.RabbitProcesse;
 import com.fireyao.repository.ItemRepository;
-import com.fireyao.repository.ItemRepositoryCustom;
+import com.fireyao.repository.ItemRepositoryExpand;
 import com.fireyao.repository.dto.ItemDTO;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +66,7 @@ public class BeanTest {
     @Test
     public void test1() throws Exception {
 
-        ItemRepositoryCustom itemRepository = context.getBean(ItemRepositoryCustom.class);
+        ItemRepositoryExpand itemRepository = context.getBean(ItemRepositoryExpand.class);
         Page<ItemDTO> itemDTO = itemRepository.findItemDTOs(null, null);
         print(itemDTO);
     }

@@ -1,13 +1,18 @@
 package com.fireyao.repository;
 
 import com.fireyao.domain.Item;
+import com.fireyao.repository.impl.ItemRepositoryImpl;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface ItemRepository extends JpaRepository<Item, Integer>, JpaSpecificationExecutor<Item>,ItemRepositoryCustom {
+/**
+ * 实现ItemRepositoryExpand之后,就可以调用我们自定义的方法了
+ * @see ItemRepositoryImpl
+ */
+public interface ItemRepository extends JpaRepository<Item, Integer>, JpaSpecificationExecutor<Item>,ItemRepositoryExpand {
     Item findByItemName(String itemName);
 
     List<Item> findByItemNameLike(String itemName);

@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * @author liuliyuan
  * @date 2017/11/7 14:16
- * @Description:
+ * @Description: ItemRepository接口的扩展接口，这里自定义一些方法。比如查询实体转换为DTO
  */
-public interface ItemRepositoryCustom {
+public interface ItemRepositoryExpand {
 
     Page<ItemDTO> findItemDTOs(Specification<Item> spec, Pageable page);
 
