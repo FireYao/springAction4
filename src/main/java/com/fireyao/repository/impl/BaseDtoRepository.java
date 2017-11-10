@@ -6,17 +6,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.query.QueryUtils;
-import org.springframework.data.jpa.repository.support.JpaRepositoryFactoryBean;
-import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.util.Assert;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,36 +34,18 @@ import java.util.List;
  */
 public abstract class BaseDtoRepository<DTO, ENTITY> {
 
-    private EntityManager em;
+    @PersistenceContext
+    private EntityManager entityManager;
     private Class<DTO> dtoClass;
     private Class<ENTITY> entityClass;
 
-
-    /**
-     * 需要子类实现这个方法来注入参数
-     *
-     * @param em
-     * @Override
-     * @PersistenceContext public void setEm(EntityManager em) {
-     * super.setParam(em, ItemDTO.class, Item.class);
-     * }
-     */
-    protected abstract void setEm(EntityManager em);
-
-    /**
-     * 在查询前需要注入EntityManager,dtoClass,entityClass三个参数
-     * 否则会报错
-     *
-     * @param em
-     * @param dtoClass
-     * @param entityClass
-     */
-    protected void setParam(EntityManager em, Class<DTO> dtoClass, Class<ENTITY> entityClass) {
-        this.em = em;
-        this.dtoClass = dtoClass;
-        this.entityClass = entityClass;
+    public BaseDtoRepository() {
+        Type t = getClass().getGenericSuperclass();
+        //获取DTO类类型
+        dtoClass = (Class<DTO>) ((ParameterizedType) t).getActualTypeArguments()[0];
+        //获取ENTITY类类型
+        entityClass = (Class<ENTITY>) ((ParameterizedType) t).getActualTypeArguments()[1];
     }
-
 
     /**
      * 分页查询
@@ -73,18 +56,9 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      */
     protected Page<DTO> findDtosByCondition(Specification<ENTITY> spec, Pageable page) {
 
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<DTO> query = cb.createQuery(dtoClass);
+        TypedQuery<DTO> query = getEntityQuery(spec, page.getSort());
 
-        TypedQuery<DTO> q = getEntityQuery(spec, query, page.getSort());
-
-        q.setFirstResult(page.getOffset());
-        q.setMaxResults(page.getPageSize());
-        Long total = executeCountQuery(spec);
-
-        List<DTO> content = total > page.getOffset() ? q.getResultList() : Collections.emptyList();
-
-        return new PageImpl<>(content, page, total);
+        return page == null ? new PageImpl<DTO>(query.getResultList()) : readPage(query, page, spec);
 
     }
 
@@ -97,9 +71,13 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      * @param sort
      * @return
      */
-    private TypedQuery<DTO> getEntityQuery(Specification<ENTITY> spec, CriteriaQuery<DTO> query, Sort sort) {
+    private TypedQuery<DTO> getEntityQuery(Specification<ENTITY> spec, Sort sort) {
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DTO> query = cb.createQuery(dtoClass);
+
         Root<ENTITY> root = query.from(entityClass);
-        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         if (spec != null) {
             Predicate predicate = spec.toPredicate(root, query, builder);
             if (predicate != null) {
@@ -114,7 +92,7 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
         if (sort != null) {
             query.orderBy(QueryUtils.toOrders(sort, root, builder));
         }
-        return em.createQuery(query);
+        return entityManager.createQuery(query);
     }
 
 
@@ -141,7 +119,7 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      */
     private TypedQuery<Long> getCountQuery(Specification<ENTITY> spec) {
 
-        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = builder.createQuery(Long.class);
 
         Root<ENTITY> root = query.from(entityClass);
@@ -162,6 +140,28 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
         // Remove all Orders the Specifications might have applied
         query.orderBy(Collections.emptyList());
 
-        return em.createQuery(query);
+        return entityManager.createQuery(query);
     }
+
+
+    /**
+     * 分页
+     *
+     * @param q
+     * @param page
+     * @param spec
+     * @return
+     */
+    private Page<DTO> readPage(TypedQuery<DTO> q, Pageable page,
+                               Specification<ENTITY> spec) {
+        q.setFirstResult(page.getOffset());
+        q.setMaxResults(page.getPageSize());
+
+        Long total = executeCountQuery(spec);
+
+        List<DTO> content = total > page.getOffset() ? q.getResultList() : Collections.emptyList();
+
+        return new PageImpl<>(content, page, total);
+    }
+
 }

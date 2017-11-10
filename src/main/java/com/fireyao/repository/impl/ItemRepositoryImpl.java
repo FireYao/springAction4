@@ -9,26 +9,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
 /**
  * @author liuliyuan
  * @date 2017/11/7 14:19
- * @Description:
- */
-
-/**
  * @see ItemRepository 的扩展实现，该实现类名前缀必须和被扩展的接口一样，否则调用扩展方法时会出错
  */
 @Component
 public class ItemRepositoryImpl extends BaseDtoRepository<ItemDTO, Item> implements ItemRepositoryExpand {
 
-    @Override
-    @PersistenceContext
-    public void setEm(EntityManager em) {
-        super.setParam(em, ItemDTO.class, Item.class);
-    }
 
     @Override
     public Page<ItemDTO> findItemDTOs(Specification<Item> spec, Pageable page) {
