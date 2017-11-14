@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * @date 2017/11/7 14:19
  * @see ItemRepository 的扩展实现，该实现类名前缀必须和被扩展的接口一样，否则调用扩展方法时会出错
  */
-@Component
+//@Component
 public class ItemRepositoryImpl extends BaseDtoRepository<ItemDTO, Item> implements ItemRepositoryExpand {
 
 

@@ -1,20 +1,26 @@
 package com.fireyao.repository.impl;
 
+import com.fireyao.repository.BaseDtoRepositoryExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.provider.PersistenceProvider;
 import org.springframework.data.jpa.repository.query.QueryUtils;
+import org.springframework.data.jpa.repository.support.CrudMethodMetadata;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.JpaEntityInformationSupport;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.util.Assert;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -23,42 +29,41 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @param <DTO>    DTO
- * @param <ENTITY> ENTITY
  * @author liuliyuan
- * @date 2017/11/9 11:37
- * @Description: DTO对象查询基类
- * 当entity中包含有很多在列表数据中不需要的字段
- * 就需要用到DTO数据传输对象，来将entity与dto进行转换，
- * 来控制数据库访问粒度，减轻数据库压力
+ * @date 2017/11/10 10:41
+ * @Description:
  */
-public abstract class BaseDtoRepository<DTO, ENTITY> {
+public class BaseDtoRepositoryExecutorImpl<DTO, ENTITY, ID extends Serializable> extends SimpleJpaRepository<ENTITY, ID> implements BaseDtoRepositoryExecutor<DTO, ENTITY, ID> {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+
+    private final EntityManager em;
     private Class<DTO> dtoClass;
     private Class<ENTITY> entityClass;
 
-    public BaseDtoRepository() {
-        Type[] types = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
+    public BaseDtoRepositoryExecutorImpl(JpaEntityInformation<ENTITY, ?> entityInformation, EntityManager entityManager) {
+        super(entityInformation, entityManager);
+        this.em = entityManager;
+
+        Type[] types = getClass().getGenericInterfaces();
+
+        ParameterizedType type = (ParameterizedType) types[0];
+//        Type[] types = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
         //获取DTO类类型
-        dtoClass = (Class<DTO>) types[0];
+//        dtoClass = (Class<DTO>) (type.getActualTypeArguments()[0]);
         //获取ENTITY类类型
-        entityClass = (Class<ENTITY>) types[1];
+        entityClass = getDomainClass();
     }
 
-    /**
-     * 分页查询
-     *
-     * @param spec
-     * @param page
-     * @return
-     */
-    protected Page<DTO> findDtosByCondition(Specification<ENTITY> spec, Pageable page) {
+    public BaseDtoRepositoryExecutorImpl(Class<ENTITY> domainClass, EntityManager em) {
+        this(JpaEntityInformationSupport.getEntityInformation(domainClass, em), em);
+    }
+
+    @Override
+    public Page<DTO> findDTOsPage(Specification<ENTITY> spec, Pageable page) {
 
         TypedQuery<DTO> query = getEntityQuery(spec, page.getSort());
 
-        return page == null ? new PageImpl<DTO>(query.getResultList()) : readPage(query, page, spec);
+        return page == null ? new PageImpl<DTO>(query.getResultList()) : getPage(query, page, spec);
 
     }
 
@@ -73,11 +78,11 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      */
     private TypedQuery<DTO> getEntityQuery(Specification<ENTITY> spec, Sort sort) {
 
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<DTO> query = cb.createQuery(dtoClass);
 
         Root<ENTITY> root = query.from(entityClass);
-        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
         if (spec != null) {
             Predicate predicate = spec.toPredicate(root, query, builder);
             if (predicate != null) {
@@ -92,7 +97,7 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
         if (sort != null) {
             query.orderBy(QueryUtils.toOrders(sort, root, builder));
         }
-        return entityManager.createQuery(query);
+        return em.createQuery(query);
     }
 
 
@@ -100,7 +105,7 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      * 分页查询时，用于计数总的实体数量
      */
     private Long executeCountQuery(Specification<ENTITY> spec) {
-        TypedQuery<Long> query = getCountQuery(spec);
+        TypedQuery<Long> query = getLongCountQuery(spec);
         Assert.notNull(query);
         List<Long> totals = query.getResultList();
         Long total = 0L;
@@ -117,9 +122,9 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      * @param spec
      * @return
      */
-    private TypedQuery<Long> getCountQuery(Specification<ENTITY> spec) {
+    private TypedQuery<Long> getLongCountQuery(Specification<ENTITY> spec) {
 
-        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<Long> query = builder.createQuery(Long.class);
 
         Root<ENTITY> root = query.from(entityClass);
@@ -140,7 +145,7 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
         // Remove all Orders the Specifications might have applied
         query.orderBy(Collections.emptyList());
 
-        return entityManager.createQuery(query);
+        return em.createQuery(query);
     }
 
 
@@ -152,8 +157,8 @@ public abstract class BaseDtoRepository<DTO, ENTITY> {
      * @param spec
      * @return
      */
-    private Page<DTO> readPage(TypedQuery<DTO> q, Pageable page,
-                               Specification<ENTITY> spec) {
+    private Page<DTO> getPage(TypedQuery<DTO> q, Pageable page,
+                              Specification<ENTITY> spec) {
         q.setFirstResult(page.getOffset());
         q.setMaxResults(page.getPageSize());
 
